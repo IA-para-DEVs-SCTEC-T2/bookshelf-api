@@ -1,6 +1,240 @@
 openapi: 3.0.0
 info:
- title: BookShelf API
- version: 1.0.0
- description: API para gerenciamento de livros em uma estante digital.
-paths: {}
+  title: BookShelf API
+  version: 1.0.0
+  description: API para gerenciamento de livros em uma estante digital.
+
+paths:
+  /health:
+    get:
+      summary: Verifica a saúde da API
+      responses:
+        '200':
+          description: API operacional
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: ok
+                  service:
+                    type: string
+                    example: bookshelf-api
+
+  /books:
+    get:
+      summary: Lista todos os livros
+      parameters:
+        - name: status
+          in: query
+          schema:
+            $ref: '#/components/schemas/BookStatus'
+          description: Filtra por status
+        - name: category
+          in: query
+          schema:
+            $ref: '#/components/schemas/BookCategory'
+          description: Filtra por categoria
+      responses:
+        '200':
+          description: Lista de livros
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Book'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+
+    post:
+      summary: Cadastra um novo livro
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateBookRequest'
+      responses:
+        '201':
+          description: Livro criado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Book'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+
+  /books/{id}:
+    get:
+      summary: Retorna um livro pelo ID
+      parameters:
+        - $ref: '#/components/parameters/BookId'
+      responses:
+        '200':
+          description: Livro encontrado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Book'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+    delete:
+      summary: Remove um livro pelo ID
+      parameters:
+        - $ref: '#/components/parameters/BookId'
+      responses:
+        '204':
+          description: Livro removido com sucesso
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /books/{id}/status:
+    patch:
+      summary: Atualiza o status de um livro
+      parameters:
+        - $ref: '#/components/parameters/BookId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateBookStatusRequest'
+      responses:
+        '200':
+          description: Status atualizado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Book'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /metrics:
+    get:
+      summary: Retorna métricas da estante
+      responses:
+        '200':
+          description: Métricas calculadas
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Metrics'
+
+components:
+  parameters:
+    BookId:
+      name: id
+      in: path
+      required: true
+      schema:
+        type: integer
+      description: ID do livro
+
+  responses:
+    BadRequest:
+      description: Requisição inválida
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+    NotFound:
+      description: Livro não encontrado
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+
+  schemas:
+    BookStatus:
+      type: string
+      enum: [unread, reading, finished]
+
+    BookCategory:
+      type: string
+      enum: [software, architecture, data, career]
+
+    Book:
+      type: object
+      properties:
+        id:
+          type: integer
+        title:
+          type: string
+        author:
+          type: string
+        category:
+          $ref: '#/components/schemas/BookCategory'
+        status:
+          $ref: '#/components/schemas/BookStatus'
+        rating:
+          type: number
+          minimum: 0
+          maximum: 5
+        createdAt:
+          type: string
+          format: date-time
+
+    CreateBookRequest:
+      type: object
+      required: [title, author, category, status]
+      properties:
+        title:
+          type: string
+        author:
+          type: string
+        category:
+          $ref: '#/components/schemas/BookCategory'
+        status:
+          $ref: '#/components/schemas/BookStatus'
+        rating:
+          type: number
+          minimum: 0
+          maximum: 5
+
+    UpdateBookStatusRequest:
+      type: object
+      required: [status]
+      properties:
+        status:
+          $ref: '#/components/schemas/BookStatus'
+
+    Metrics:
+      type: object
+      properties:
+        totalBooks:
+          type: integer
+        booksByStatus:
+          type: object
+          properties:
+            unread:
+              type: integer
+            reading:
+              type: integer
+            finished:
+              type: integer
+        booksByCategory:
+          type: object
+          properties:
+            software:
+              type: integer
+            architecture:
+              type: integer
+            data:
+              type: integer
+            career:
+              type: integer
+        averageRating:
+          type: number
+
+    ErrorResponse:
+      type: object
+      properties:
+        error:
+          type: string
+          example: Livro não encontrado
