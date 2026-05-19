@@ -3,11 +3,21 @@ info:
   title: BookShelf API
   version: 1.0.0
   description: API para gerenciamento de livros em uma estante digital.
+  license:
+    name: MIT
+
+servers:
+  - url: http://localhost:3000
+    description: Servidor local de desenvolvimento
+
+security: []
 
 paths:
   /health:
     get:
+      operationId: getHealth
       summary: Verifica a saúde da API
+      security: []
       responses:
         '200':
           description: API operacional
@@ -22,10 +32,18 @@ paths:
                   service:
                     type: string
                     example: bookshelf-api
+        '500':
+          description: Erro interno do servidor
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
 
   /books:
     get:
+      operationId: listBooks
       summary: Lista todos os livros
+      security: []
       parameters:
         - name: status
           in: query
@@ -50,7 +68,9 @@ paths:
           $ref: '#/components/responses/BadRequest'
 
     post:
+      operationId: createBook
       summary: Cadastra um novo livro
+      security: []
       requestBody:
         required: true
         content:
@@ -69,7 +89,9 @@ paths:
 
   /books/{id}:
     get:
+      operationId: getBookById
       summary: Retorna um livro pelo ID
+      security: []
       parameters:
         - $ref: '#/components/parameters/BookId'
       responses:
@@ -83,7 +105,9 @@ paths:
           $ref: '#/components/responses/NotFound'
 
     delete:
+      operationId: deleteBook
       summary: Remove um livro pelo ID
+      security: []
       parameters:
         - $ref: '#/components/parameters/BookId'
       responses:
@@ -94,7 +118,9 @@ paths:
 
   /books/{id}/status:
     patch:
+      operationId: updateBookStatus
       summary: Atualiza o status de um livro
+      security: []
       parameters:
         - $ref: '#/components/parameters/BookId'
       requestBody:
@@ -117,7 +143,9 @@ paths:
 
   /metrics:
     get:
+      operationId: getMetrics
       summary: Retorna métricas da estante
+      security: []
       responses:
         '200':
           description: Métricas calculadas
@@ -125,6 +153,12 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Metrics'
+        '500':
+          description: Erro interno do servidor
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
 
 components:
   parameters:
