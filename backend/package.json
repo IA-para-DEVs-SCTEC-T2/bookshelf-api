@@ -6,6 +6,7 @@
  "scripts": {
   "start": "node src/server.js",
   "test": "jest",
+  "test:coverage": "jest --coverage",
   "build": "node -c src/app.js && node -c src/server.js",
   "lint": "eslint src tests"
  },
@@ -29,7 +30,23 @@
   "supertest": "^6.3.4"
  },
  "jest": {
-  "testEnvironment": "node"
+  "testEnvironment": "node",
+  "collectCoverageFrom": [
+   "src/**/*.js",
+   "!src/server.js"
+  ],
+  "coverageThreshold": {
+   "global": {
+    "lines": 80,
+    "functions": 80,
+    "branches": 70,
+    "statements": 80
+   }
+  },
+  "coverageReporters": [
+   "text",
+   "lcov"
+  ]
  },
  "directories": {
   "test": "tests"
