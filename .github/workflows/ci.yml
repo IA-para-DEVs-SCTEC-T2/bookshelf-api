@@ -99,7 +99,6 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 10
     needs: [backend, frontend, docs]
-    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
     defaults:
       run:
         shell: bash
