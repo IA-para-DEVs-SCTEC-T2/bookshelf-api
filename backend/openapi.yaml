@@ -4,9 +4,16 @@ info:
   version: 1.0.0
   description: API para gerenciamento de livros em uma estante digital.
 
+servers:
+  - url: http://localhost:3000
+    description: Servidor local de desenvolvimento
+
+security: []
+
 paths:
   /health:
     get:
+      operationId: getHealth
       summary: Verifica a saúde da API
       responses:
         '200':
@@ -25,6 +32,7 @@ paths:
 
   /books:
     get:
+      operationId: listBooks
       summary: Lista todos os livros
       parameters:
         - name: status
@@ -50,6 +58,7 @@ paths:
           $ref: '#/components/responses/BadRequest'
 
     post:
+      operationId: createBook
       summary: Cadastra um novo livro
       requestBody:
         required: true
@@ -69,6 +78,7 @@ paths:
 
   /books/{id}:
     get:
+      operationId: getBookById
       summary: Retorna um livro pelo ID
       parameters:
         - $ref: '#/components/parameters/BookId'
@@ -83,6 +93,7 @@ paths:
           $ref: '#/components/responses/NotFound'
 
     delete:
+      operationId: deleteBook
       summary: Remove um livro pelo ID
       parameters:
         - $ref: '#/components/parameters/BookId'
@@ -94,6 +105,7 @@ paths:
 
   /books/{id}/status:
     patch:
+      operationId: updateBookStatus
       summary: Atualiza o status de um livro
       parameters:
         - $ref: '#/components/parameters/BookId'
@@ -117,6 +129,7 @@ paths:
 
   /metrics:
     get:
+      operationId: getMetrics
       summary: Retorna métricas da estante
       responses:
         '200':
@@ -125,6 +138,8 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Metrics'
+        '500':
+          $ref: '#/components/responses/InternalError'
 
 components:
   parameters:
@@ -145,6 +160,12 @@ components:
             $ref: '#/components/schemas/ErrorResponse'
     NotFound:
       description: Livro não encontrado
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+    InternalError:
+      description: Erro interno do servidor
       content:
         application/json:
           schema:
