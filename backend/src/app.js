@@ -1,7 +1,15 @@
 const express = require('express');
 const cors = require('cors');
+const swaggerUi = require('swagger-ui-express');
+const fs = require('fs');
+const path = require('path');
+const YAML = require('yaml');
 
 const app = express();
+
+const openapiPath = path.join(__dirname, '..', 'openapi.yaml');
+const swaggerDocument = YAML.parse(fs.readFileSync(openapiPath, 'utf8'));
+app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerDocument));
 
 app.use(cors());
 app.use(express.json());
