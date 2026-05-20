@@ -1,10 +1,29 @@
 const express = require('express');
 const cors = require('cors');
+const path = require('path');
+const swaggerUi = require('swagger-ui-express');
+const YAML = require('yamljs');
 
 const app = express();
 
+// Carregar especificação OpenAPI
+const swaggerDocument = YAML.load(path.join(__dirname, '../openapi.yaml'));
+
 app.use(cors());
 app.use(express.json());
+
+// Configurar Swagger UI
+app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerDocument, {
+  swaggerOptions: {
+    url: '/openapi.yaml'
+  }
+}));
+
+// Servir o arquivo openapi.yaml como JSON
+app.get('/openapi.yaml', (req, res) => {
+  res.setHeader('Content-Type', 'application/yaml');
+  res.sendFile(path.join(__dirname, '../openapi.yaml'));
+});
 
 let nextBookId = 4;
 
