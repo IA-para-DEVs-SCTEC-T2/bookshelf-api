@@ -1,0 +1,473 @@
+openapi: 3.0.3
+
+info:
+  title: Bookshelf API
+  description: >
+    API REST para gerenciamento de uma estante de livros digital.
+    Permite cadastrar livros, controlar o status de leitura, filtrar por categoria
+    e acompanhar métricas da coleção. Os dados são armazenados em memória —
+    nenhum banco de dados externo é necessário.
+  version: 1.0.0
+  license:
+    name: MIT
+
+servers:
+  - url: http://localhost:3000
+    description: Servidor local de desenvolvimento
+
+tags:
+  - name: Health
+    description: Monitoramento e disponibilidade da API
+  - name: Books
+    description: Operações sobre os livros da estante
+  - name: Metrics
+    description: Métricas e estatísticas da coleção
+
+paths:
+
+  # ─────────────────────────────────────────
+  # HEALTH
+  # ─────────────────────────────────────────
+  /health:
+    get:
+      tags:
+        - Health
+      summary: Verifica a saúde da API
+      description: Retorna o status atual do serviço. Útil para monitoramento e health checks automatizados.
+      operationId: getHealth
+      responses:
+        '200':
+          description: API operacional
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HealthResponse'
+              example:
+                status: ok
+                service: bookshelf-api
+
+  # ─────────────────────────────────────────
+  # BOOKS
+  # ─────────────────────────────────────────
+  /books:
+    get:
+      tags:
+        - Books
+      summary: Lista todos os livros
+      description: >
+        Retorna a lista completa de livros cadastrados na estante.
+        Aceita filtros opcionais por `status` e `category` via query string.
+      operationId: listBooks
+      parameters:
+        - name: status
+          in: query
+          required: false
+          description: Filtra os livros pelo status de leitura
+          schema:
+            $ref: '#/components/schemas/BookStatus'
+          example: reading
+        - name: category
+          in: query
+          required: false
+          description: Filtra os livros pela categoria
+          schema:
+            $ref: '#/components/schemas/BookCategory'
+          example: software
+      responses:
+        '200':
+          description: Lista de livros retornada com sucesso
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Book'
+              example:
+                - id: 1
+                  title: Clean Code
+                  author: Robert C. Martin
+                  category: software
+                  status: reading
+                  rating: 5
+                  createdAt: '2026-05-01T10:00:00.000Z'
+                - id: 2
+                  title: The Pragmatic Programmer
+                  author: Andrew Hunt and David Thomas
+                  category: software
+                  status: unread
+                  rating: 4
+                  createdAt: '2026-05-02T14:30:00.000Z'
+        '400':
+          description: Valor de filtro inválido
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                statusInvalido:
+                  summary: Status inválido
+                  value:
+                    error: Status inválido
+                categoriaInvalida:
+                  summary: Categoria inválida
+                  value:
+                    error: Categoria inválida
+
+    post:
+      tags:
+        - Books
+      summary: Cadastra um novo livro
+      description: >
+        Cria um novo registro de livro na estante.
+        Os campos `title`, `author`, `category` e `status` são obrigatórios.
+        O campo `rating` é opcional e assume valor `0` se não informado.
+      operationId: createBook
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateBookRequest'
+            example:
+              title: Domain-Driven Design
+              author: Eric Evans
+              category: architecture
+              status: unread
+              rating: 5
+      responses:
+        '201':
+          description: Livro criado com sucesso
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Book'
+              example:
+                id: 4
+                title: Domain-Driven Design
+                author: Eric Evans
+                category: architecture
+                status: unread
+                rating: 5
+                createdAt: '2026-05-19T10:00:00.000Z'
+        '400':
+          description: Campo obrigatório ausente ou valor inválido
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                tituloAusente:
+                  summary: Título ausente
+                  value:
+                    error: 'Campo obrigatório: title'
+                autorAusente:
+                  summary: Autor ausente
+                  value:
+                    error: 'Campo obrigatório: author'
+                categoriaInvalida:
+                  summary: Categoria inválida
+                  value:
+                    error: Categoria inválida
+                statusInvalido:
+                  summary: Status inválido
+                  value:
+                    error: Status inválido
+
+  /books/{id}:
+    get:
+      tags:
+        - Books
+      summary: Busca um livro pelo ID
+      description: Retorna os dados completos de um livro específico com base no ID informado.
+      operationId: getBookById
+      parameters:
+        - $ref: '#/components/parameters/BookId'
+      responses:
+        '200':
+          description: Livro encontrado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Book'
+              example:
+                id: 1
+                title: Clean Code
+                author: Robert C. Martin
+                category: software
+                status: reading
+                rating: 5
+                createdAt: '2026-05-01T10:00:00.000Z'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+    delete:
+      tags:
+        - Books
+      summary: Remove um livro
+      description: Exclui permanentemente um livro da estante com base no ID informado.
+      operationId: deleteBook
+      parameters:
+        - $ref: '#/components/parameters/BookId'
+      responses:
+        '204':
+          description: Livro removido com sucesso (sem corpo na resposta)
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /books/{id}/status:
+    patch:
+      tags:
+        - Books
+      summary: Atualiza o status de leitura de um livro
+      description: >
+        Altera o status de leitura de um livro existente.
+        O campo `status` é obrigatório e deve ser um dos valores permitidos:
+        `unread`, `reading` ou `finished`.
+      operationId: updateBookStatus
+      parameters:
+        - $ref: '#/components/parameters/BookId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateBookStatusRequest'
+            example:
+              status: finished
+      responses:
+        '200':
+          description: Status atualizado com sucesso — retorna o livro completo atualizado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Book'
+              example:
+                id: 1
+                title: Clean Code
+                author: Robert C. Martin
+                category: software
+                status: finished
+                rating: 5
+                createdAt: '2026-05-01T10:00:00.000Z'
+        '400':
+          description: Valor de status inválido
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              example:
+                error: Status inválido
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  # ─────────────────────────────────────────
+  # METRICS
+  # ─────────────────────────────────────────
+  /metrics:
+    get:
+      tags:
+        - Metrics
+      summary: Retorna métricas da estante
+      description: >
+        Retorna dados agregados sobre os livros cadastrados:
+        total de livros, distribuição por status de leitura,
+        distribuição por categoria e média de avaliação (rating).
+      operationId: getMetrics
+      responses:
+        '200':
+          description: Métricas calculadas com sucesso
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Metrics'
+              example:
+                totalBooks: 3
+                booksByStatus:
+                  unread: 1
+                  reading: 1
+                  finished: 1
+                booksByCategory:
+                  software: 2
+                  architecture: 1
+                  data: 0
+                  career: 0
+                averageRating: 4.67
+
+# ─────────────────────────────────────────
+# COMPONENTS
+# ─────────────────────────────────────────
+components:
+
+  parameters:
+    BookId:
+      name: id
+      in: path
+      required: true
+      description: Identificador numérico único do livro
+      schema:
+        type: integer
+        example: 1
+
+  responses:
+    NotFound:
+      description: Livro não encontrado
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+          example:
+            error: Livro não encontrado
+
+  schemas:
+
+    BookStatus:
+      type: string
+      description: Status de leitura do livro
+      enum:
+        - unread
+        - reading
+        - finished
+      example: reading
+
+    BookCategory:
+      type: string
+      description: Categoria temática do livro
+      enum:
+        - software
+        - architecture
+        - data
+        - career
+      example: software
+
+    Book:
+      type: object
+      description: Representa um livro cadastrado na estante
+      properties:
+        id:
+          type: integer
+          description: Identificador único gerado automaticamente
+          example: 1
+        title:
+          type: string
+          description: Título do livro
+          example: Clean Code
+        author:
+          type: string
+          description: Nome do autor ou autores
+          example: Robert C. Martin
+        category:
+          $ref: '#/components/schemas/BookCategory'
+        status:
+          $ref: '#/components/schemas/BookStatus'
+        rating:
+          type: number
+          description: Avaliação do livro de 0 a 5
+          minimum: 0
+          maximum: 5
+          example: 5
+        createdAt:
+          type: string
+          format: date-time
+          description: Data e hora de cadastro no formato ISO 8601
+          example: '2026-05-01T10:00:00.000Z'
+
+    CreateBookRequest:
+      type: object
+      description: Payload para cadastro de um novo livro
+      required:
+        - title
+        - author
+        - category
+        - status
+      properties:
+        title:
+          type: string
+          description: Título do livro (obrigatório, não pode ser vazio)
+          example: Domain-Driven Design
+        author:
+          type: string
+          description: Nome do autor (obrigatório, não pode ser vazio)
+          example: Eric Evans
+        category:
+          $ref: '#/components/schemas/BookCategory'
+        status:
+          $ref: '#/components/schemas/BookStatus'
+        rating:
+          type: number
+          description: Avaliação do livro de 0 a 5 (opcional, padrão 0)
+          minimum: 0
+          maximum: 5
+          example: 5
+
+    UpdateBookStatusRequest:
+      type: object
+      description: Payload para atualização do status de leitura
+      required:
+        - status
+      properties:
+        status:
+          $ref: '#/components/schemas/BookStatus'
+
+    Metrics:
+      type: object
+      description: Dados agregados sobre a coleção de livros
+      properties:
+        totalBooks:
+          type: integer
+          description: Total de livros cadastrados na estante
+          example: 3
+        booksByStatus:
+          type: object
+          description: Quantidade de livros agrupados por status de leitura
+          properties:
+            unread:
+              type: integer
+              example: 1
+            reading:
+              type: integer
+              example: 1
+            finished:
+              type: integer
+              example: 1
+        booksByCategory:
+          type: object
+          description: Quantidade de livros agrupados por categoria
+          properties:
+            software:
+              type: integer
+              example: 2
+            architecture:
+              type: integer
+              example: 1
+            data:
+              type: integer
+              example: 0
+            career:
+              type: integer
+              example: 0
+        averageRating:
+          type: number
+          description: Média das avaliações de todos os livros (arredondada em 2 casas decimais)
+          example: 4.67
+
+    HealthResponse:
+      type: object
+      description: Resposta do endpoint de verificação de saúde
+      properties:
+        status:
+          type: string
+          description: Estado atual da API
+          example: ok
+        service:
+          type: string
+          description: Nome do serviço
+          example: bookshelf-api
+
+    ErrorResponse:
+      type: object
+      description: Estrutura padrão de resposta para erros
+      properties:
+        error:
+          type: string
+          description: Mensagem descritiva do erro
+          example: Livro não encontrado
