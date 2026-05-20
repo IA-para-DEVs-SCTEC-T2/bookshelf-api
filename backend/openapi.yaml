@@ -1,16 +1,40 @@
-openapi: 3.0.0
+openapi: 3.0.3
 info:
   title: BookShelf API
   version: 1.0.0
-  description: API para gerenciamento de livros em uma estante digital.
+  description: |
+    API REST simples e didática para gerenciar uma coleção de livros.
+    Permite listar, buscar, criar, atualizar status e deletar livros.
+    Também fornece métricas sobre a biblioteca.
+  contact:
+    name: BookShelf Project
+    url: https://github.com/seu-usuario/bookshelf-api
+  license:
+    name: MIT
+
+servers:
+  - url: http://localhost:5000
+    description: Servidor local de desenvolvimento
+
+tags:
+  - name: Health
+    description: Verificar status da API
+  - name: Books
+    description: Gerenciar livros
+  - name: Metrics
+    description: Consultar estatísticas
 
 paths:
   /health:
     get:
-      summary: Verifica a saúde da API
+      tags:
+        - Health
+      summary: Verificar se a API está funcionando
+      description: Retorna o status da API
+      operationId: getHealth
       responses:
         '200':
-          description: API operacional
+          description: API funcionando corretamente
           content:
             application/json:
               schema:
@@ -25,21 +49,27 @@ paths:
 
   /books:
     get:
-      summary: Lista todos os livros
+      tags:
+        - Books
+      summary: Listar todos os livros
+      description: Retorna lista de todos os livros com filtros opcionais por status e categoria
+      operationId: listBooks
       parameters:
         - name: status
           in: query
+          description: Filtrar por status do livro
+          required: false
           schema:
             $ref: '#/components/schemas/BookStatus'
-          description: Filtra por status
         - name: category
           in: query
+          description: Filtrar por categoria do livro
+          required: false
           schema:
             $ref: '#/components/schemas/BookCategory'
-          description: Filtra por categoria
       responses:
         '200':
-          description: Lista de livros
+          description: Lista de livros retornada com sucesso
           content:
             application/json:
               schema:
@@ -50,8 +80,13 @@ paths:
           $ref: '#/components/responses/BadRequest'
 
     post:
-      summary: Cadastra um novo livro
+      tags:
+        - Books
+      summary: Cadastrar um novo livro
+      description: Cria um novo livro na coleção
+      operationId: createBook
       requestBody:
+        description: Dados do novo livro
         required: true
         content:
           application/json:
@@ -59,7 +94,7 @@ paths:
               $ref: '#/components/schemas/CreateBookRequest'
       responses:
         '201':
-          description: Livro criado
+          description: Livro criado com sucesso
           content:
             application/json:
               schema:
@@ -69,7 +104,11 @@ paths:
 
   /books/{id}:
     get:
-      summary: Retorna um livro pelo ID
+      tags:
+        - Books
+      summary: Buscar livro por ID
+      description: Retorna um livro específico pelo seu identificador
+      operationId: getBookById
       parameters:
         - $ref: '#/components/parameters/BookId'
       responses:
@@ -83,21 +122,30 @@ paths:
           $ref: '#/components/responses/NotFound'
 
     delete:
-      summary: Remove um livro pelo ID
+      tags:
+        - Books
+      summary: Deletar um livro
+      description: Remove um livro da coleção
+      operationId: deleteBook
       parameters:
         - $ref: '#/components/parameters/BookId'
       responses:
         '204':
-          description: Livro removido com sucesso
+          description: Livro deletado com sucesso (sem conteúdo)
         '404':
           $ref: '#/components/responses/NotFound'
 
   /books/{id}/status:
     patch:
-      summary: Atualiza o status de um livro
+      tags:
+        - Books
+      summary: Alterar status de um livro
+      description: Atualiza o status de leitura de um livro
+      operationId: updateBookStatus
       parameters:
         - $ref: '#/components/parameters/BookId'
       requestBody:
+        description: Novo status do livro
         required: true
         content:
           application/json:
@@ -105,7 +153,7 @@ paths:
               $ref: '#/components/schemas/UpdateBookStatusRequest'
       responses:
         '200':
-          description: Status atualizado
+          description: Status atualizado com sucesso
           content:
             application/json:
               schema:
@@ -117,10 +165,14 @@ paths:
 
   /metrics:
     get:
-      summary: Retorna métricas da estante
+      tags:
+        - Metrics
+      summary: Consultar métricas da biblioteca
+      description: Retorna estatísticas sobre os livros (total, por status, por categoria e média de avaliações)
+      operationId: getMetrics
       responses:
         '200':
-          description: Métricas calculadas
+          description: Métricas retornadas com sucesso
           content:
             application/json:
               schema:
@@ -132,9 +184,10 @@ components:
       name: id
       in: path
       required: true
+      description: ID do livro
       schema:
         type: integer
-      description: ID do livro
+        example: 1
 
   responses:
     BadRequest:
@@ -153,88 +206,154 @@ components:
   schemas:
     BookStatus:
       type: string
-      enum: [unread, reading, finished]
+      description: Status de leitura do livro
+      enum:
+        - unread
+        - reading
+        - finished
+      example: reading
 
     BookCategory:
       type: string
-      enum: [software, architecture, data, career]
+      description: Categoria do livro
+      enum:
+        - software
+        - architecture
+        - data
+        - career
+      example: software
 
     Book:
       type: object
+      description: Objeto representando um livro
       properties:
         id:
           type: integer
+          description: Identificador único do livro
+          example: 1
         title:
           type: string
+          description: Título do livro
+          example: Clean Code
         author:
           type: string
+          description: Autor do livro
+          example: Robert C. Martin
         category:
           $ref: '#/components/schemas/BookCategory'
         status:
           $ref: '#/components/schemas/BookStatus'
         rating:
-          type: number
+          type: integer
+          description: Avaliação do livro (0-5)
           minimum: 0
           maximum: 5
+          example: 5
         createdAt:
           type: string
           format: date-time
+          description: Data e hora de criação do livro no formato ISO 8601
+          example: "2026-05-01T10:00:00.000Z"
+      required:
+        - id
+        - title
+        - author
+        - category
+        - status
+        - rating
+        - createdAt
 
     CreateBookRequest:
       type: object
-      required: [title, author, category, status]
+      description: Dados necessários para criar um novo livro
+      required:
+        - title
+        - author
+        - category
+        - status
       properties:
         title:
           type: string
+          description: Título do livro (obrigatório, não pode estar vazio)
+          example: Clean Code
         author:
           type: string
+          description: Autor do livro (obrigatório, não pode estar vazio)
+          example: Robert C. Martin
         category:
           $ref: '#/components/schemas/BookCategory'
         status:
           $ref: '#/components/schemas/BookStatus'
         rating:
-          type: number
+          type: integer
+          description: Avaliação do livro (opcional, padrão 0)
           minimum: 0
           maximum: 5
+          example: 4
 
     UpdateBookStatusRequest:
       type: object
-      required: [status]
+      description: Dados para atualizar o status de um livro
+      required:
+        - status
       properties:
         status:
           $ref: '#/components/schemas/BookStatus'
 
     Metrics:
       type: object
+      description: Estatísticas sobre a biblioteca de livros
       properties:
         totalBooks:
           type: integer
+          description: Total de livros na biblioteca
+          example: 3
         booksByStatus:
           type: object
+          description: Contagem de livros por status
           properties:
             unread:
               type: integer
+              example: 1
             reading:
               type: integer
+              example: 1
             finished:
               type: integer
+              example: 1
         booksByCategory:
           type: object
+          description: Contagem de livros por categoria
           properties:
             software:
               type: integer
+              example: 2
             architecture:
               type: integer
+              example: 1
             data:
               type: integer
+              example: 0
             career:
               type: integer
+              example: 0
         averageRating:
-          type: number
+          type: string
+          description: Avaliação média dos livros (formatada com 2 casas decimais)
+          example: "4.67"
+      required:
+        - totalBooks
+        - booksByStatus
+        - booksByCategory
+        - averageRating
 
     ErrorResponse:
       type: object
+      description: Objeto de erro padrão da API
       properties:
         error:
           type: string
+          description: Mensagem de erro descritiva
           example: Livro não encontrado
+      required:
+        - error
