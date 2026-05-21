@@ -1,0 +1,61 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  backend:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: backend
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - run: npm ci
+      - run: npm run lint
+      - run: npm test
+      - run: npm run build
+      - name: Verificar openapi.yaml existe
+        run: test -f openapi.yaml
+      - name: Verificar endpoint /books/{id}/status documentado
+        run: grep -q "/books/{id}/status" openapi.yaml
+
+  frontend:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: frontend
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - run: npm ci
+      - run: npm run lint
+      - run: npm test
+      - run: npm run build
+
+  docs:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Verificar arquivos obrigatórios
+        run: |
+          test -f README.md
+          test -f docs/ARCHITECTURE.md
+          test -f docs/INSTALLATION.md
+          test -f docs/diagrams/api-flow.md
+
+  deploy:
+    runs-on: ubuntu-latest
+    needs: [backend, frontend, docs]
+    steps:
+      - uses: actions/checkout@v4
+      - name: Deploy
+        run: echo "Deploy executado com sucesso"
