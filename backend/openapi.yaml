@@ -198,6 +198,14 @@ paths:
                 $ref: '#/components/schemas/ErrorResponse'
               example:
                 error: Livro não encontrado
+        '409':
+          description: Livro com status "reading" não pode ser removido diretamente
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              example:
+                error: Livros com status "reading" não podem ser removidos diretamente
 
   /books/{id}/status:
     patch:

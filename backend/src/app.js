@@ -183,6 +183,12 @@ app.delete('/books/:id', (req, res) => {
    });
  }
 
+ if (book.status === 'reading') {
+   return res.status(409).json({
+     error: 'Livros com status "reading" não podem ser removidos diretamente'
+   });
+ }
+
  books = books.filter((item) => item.id !== book.id);
 
  return res.status(204).send();
