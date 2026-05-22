@@ -141,6 +141,8 @@ curl -X PATCH http://localhost:3000/books/1/status \
 curl -X DELETE http://localhost:3000/books/1
 ```
 
+> **Atenção:** livros com status `reading` não podem ser removidos diretamente. A tentativa retorna `409 Conflict` com a mensagem `"Livro em leitura não pode ser removido diretamente"`.
+
 ### Consultar métricas
 
 ```bash
@@ -153,3 +155,31 @@ curl http://localhost:3000/metrics
 - O projeto possui pipeline CI/CD configurado com GitHub Actions para lint, testes e build.
 - A documentação da API está disponível em `backend/openapi.yaml` no formato OpenAPI 3.0.
 - Ideal para praticar criação de rotas, verbos HTTP, testes automatizados e organização de projetos full-stack.
+
+## Scripts disponíveis
+
+### Backend
+
+| Script | Comando | Descrição |
+|--------|---------|-----------|
+| Iniciar servidor | `npm start` | Inicia a API em `http://localhost:3000` |
+| Testes | `npm test` | Executa a suíte de testes com Jest |
+| Build | `npm run build` | Valida a sintaxe dos arquivos principais |
+| Lint | `npm run lint` | Verifica o código com ESLint |
+| Docs viva | `npm run docs:live` | Gera prompt de atualização de documentação baseado no `git diff` atual |
+
+---
+
+## Histórico de alterações
+
+- [x] `README.md` — criado e atualizado com descrição, tecnologias, funcionalidades, estrutura, instalação, execução, endpoints, exemplos e scripts
+- [x] `docs/INSTALLATION.md` — criado com pré-requisitos, clone, instalação, modos de execução, health check, testes, lint, build e problemas comuns
+- [x] `docs/diagrams/api-flow.md` — criado com diagrama Mermaid `flowchart TD` do fluxo entre Usuário, Frontend React, API Express e Dados em memória
+- [x] `docs/diagrams/use-case.md` — criado com diagrama Mermaid `flowchart LR` de casos de uso do sistema
+- [x] `docs/diagrams/sequence-diagram.md` — criado com diagrama Mermaid `sequenceDiagram` do fluxo de cadastro de livro (sucesso e erro)
+- [x] `backend/openapi.yaml` — reescrito com OpenAPI 3.0.0 cobrindo todos os 7 endpoints, schemas reutilizáveis, `operationId`, `security: []` e respostas 4XX em todas as operações
+- [x] `backend/src/app.js` — adicionada integração com Swagger UI via `swagger-ui-express` e `yamljs`, expondo documentação interativa em `/api-docs`
+- [x] `backend/package.json` — adicionadas dependências `swagger-ui-express@5.0.1` e `yamljs@0.3.0`; adicionado script `docs:live`
+- [x] `scripts/docs-live.sh` — criado script que captura o `git diff` e gera prompt de atualização de documentação em `.tmp/docs-live/docs-live.generated.md`
+- [x] `docs/prompts/docs-live-update.md` — criado template de prompt para o fluxo de documentação viva
+- [x] `.gitignore` — adicionada entrada `.tmp/` para ignorar arquivos temporários gerados pelo script `docs:live`

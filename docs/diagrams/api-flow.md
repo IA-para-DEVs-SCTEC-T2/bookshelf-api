@@ -21,3 +21,21 @@ flowchart TD
     C -->|Resposta HTTP| B
     B --> A
 ```
+
+## DELETE /books/:id
+
+```mermaid
+sequenceDiagram
+    participant Cliente
+    participant API
+
+    Cliente->>API: DELETE /books/:id
+
+    alt Livro não encontrado
+        API-->>Cliente: 404 { "error": "Livro não encontrado" }
+    else Livro com status "reading"
+        API-->>Cliente: 409 { "error": "Livro em leitura não pode ser removido diretamente" }
+    else Livro encontrado e removível
+        API-->>Cliente: 204 (sem corpo)
+    end
+```

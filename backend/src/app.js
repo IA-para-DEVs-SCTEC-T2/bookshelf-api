@@ -174,17 +174,19 @@ app.patch('/books/:id/status', (req, res) => {
 });
 
 app.delete('/books/:id', (req, res) => {
- const book = findBookById(req.params.id);
-
- if (!book) {
-   return res.status(404).json({
-     error: 'Livro não encontrado'
-   });
- }
-
- books = books.filter((item) => item.id !== book.id);
-
- return res.status(204).send();
+const book = findBookById(req.params.id);
+if (!book) {
+return res.status(404).json({
+error: 'Livro não encontrado'
+});
+}
+if (book.status === 'reading') {
+return res.status(409).json({
+error: 'Livro em leitura não pode ser removido diretamente'
+});
+}
+books = books.filter((item) => item.id !== book.id);
+return res.status(204).send();
 });
 
 app.get('/metrics', (req, res) => {
