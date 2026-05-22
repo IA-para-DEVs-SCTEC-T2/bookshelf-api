@@ -15,7 +15,7 @@ app.use(express.json());
 
 let nextBookId = 4;
 
-const allowedStatuses = ['unread', 'reading', 'finished'];
+const allowedStatuses = ['unread', 'reading', 'finished', 'borrowed'];
 const allowedCategories = [
  'software',
  'architecture',
@@ -179,6 +179,18 @@ app.delete('/books/:id', (req, res) => {
  if (!book) {
    return res.status(404).json({
      error: 'Livro não encontrado'
+   });
+ }
+
+ if (book.status === 'borrowed') {
+   return res.status(409).json({
+     error: 'Livro está emprestado'
+   });
+ }
+
+ if (book.status === 'reading') {
+   return res.status(409).json({
+     error: 'Livro em leitura não pode ser removido diretamente'
    });
  }
 
