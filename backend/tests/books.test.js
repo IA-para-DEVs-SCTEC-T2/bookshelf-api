@@ -27,3 +27,60 @@ describe('BookShelf API - testes mínimos', () => {
    expect(response.body).toHaveProperty('averageRating');
  });
 });
+
+describe('DELETE /books/:id', () => {
+ async function createBook(status) {
+   const response = await request(app)
+     .post('/books')
+     .send({ title: 'Livro Teste', author: 'Autor', category: 'software', status, rating: 3 });
+   return response.body.id;
+ }
+
+ test('deve retornar 404 quando o livro não existe', async () => {
+   // Arrange
+   const idInexistente = 99999;
+
+   // Act
+   const response = await request(app).delete(`/books/${idInexistente}`);
+
+   // Assert
+   expect(response.status).toBe(404);
+   expect(response.body).toHaveProperty('error', 'Livro não encontrado');
+ });
+
+ test('deve retornar 409 quando o livro está com status borrowed', async () => {
+   // Arrange
+   const id = await createBook('borrowed');
+
+   // Act
+   const response = await request(app).delete(`/books/${id}`);
+
+   // Assert
+   expect(response.status).toBe(409);
+   expect(response.body).toHaveProperty('error', 'Livro está emprestado');
+ });
+
+ test('deve retornar 409 quando o livro está com status reading', async () => {
+   // Arrange
+   const id = await createBook('reading');
+
+   // Act
+   const response = await request(app).delete(`/books/${id}`);
+
+   // Assert
+   expect(response.status).toBe(409);
+   expect(response.body).toHaveProperty('error', 'Livro em leitura não pode ser removido diretamente');
+ });
+
+ test('deve retornar 204 quando o livro é removido com sucesso', async () => {
+   // Arrange
+   const id = await createBook('unread');
+
+   // Act
+   const response = await request(app).delete(`/books/${id}`);
+
+   // Assert
+   expect(response.status).toBe(204);
+   expect(response.body).toEqual({});
+ });
+});

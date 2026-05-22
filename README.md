@@ -99,6 +99,19 @@ npm run dev
 | DELETE | /books/:id | Remove um livro |
 | GET | /metrics | Consulta métricas da estante |
 
+## Regras de negócio
+
+### Remoção de livros — `DELETE /books/:id`
+
+Livros só podem ser removidos quando não estiverem ativamente em uso. A rota valida o status do livro antes de prosseguir com a exclusão.
+
+| Situação | Status HTTP | Mensagem |
+|----------|-------------|----------|
+| Livro não encontrado | `404 Not Found` | `Livro não encontrado` |
+| Livro está emprestado (`borrowed`) | `409 Conflict` | `Livro está emprestado` |
+| Livro está em leitura (`reading`) | `409 Conflict` | `Livro está em leitura` |
+| Remoção realizada com sucesso | `204 No Content` | _(sem corpo)_ |
+
 ## Exemplos de requisição
 
 ### Listar livros

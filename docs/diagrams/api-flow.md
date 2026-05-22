@@ -21,3 +21,18 @@ flowchart TD
     C -->|Resposta HTTP| B
     B --> A
 ```
+
+## Fluxo detalhado — DELETE /books/:id
+
+```mermaid
+flowchart TD
+    Start([DELETE /books/:id]) --> FindBook[Buscar livro por ID]
+    FindBook --> BookExists{Livro existe?}
+    BookExists -- Não --> R404[404 Not Found\nLivro não encontrado]
+    BookExists -- Sim --> CheckBorrowed{status = borrowed?}
+    CheckBorrowed -- Sim --> R409B[409 Conflict\nLivro está emprestado]
+    CheckBorrowed -- Não --> CheckReading{status = reading?}
+    CheckReading -- Sim --> R409R[409 Conflict\nLivro está em leitura]
+    CheckReading -- Não --> Delete[Remover livro da memória]
+    Delete --> R204[204 No Content]
+```
